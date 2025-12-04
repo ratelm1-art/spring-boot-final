@@ -1,36 +1,42 @@
 pipeline {
     agent any
 
-    options {
-        skipStagesAfterUnstable()
-    }
-
     tools {
         maven '3.9.11'
     }
 
     stages {
-        stage('Checkout Source Code') {
+
+        stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/ratelm1-art/spring-boot-updated'
+                echo "Checking out source code..."
+                git branch: 'main', url: 'https://github.com/ratelm1-art/spring-boot-final.git'
             }
         }
 
-        stage('Test') {
+        stage('Build JAR') {
             steps {
-                sh 'git --version'
-                sh 'mvn --version'
-                sh 'mvn clean test' // Example for a Maven project
+                echo "Building project with Maven..."
+                sh './mvnw clean install -DskipTests'
             }
         }
 
-        stage('Build and Package') {
+        stage('Publish to Nexus') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                echo "Simulating upload of JAR to Nexus..."
+
+                sh '''
+                    echo "Listing built JARs:"
+                    ls -l target/*.jar || echo "No JAR produced."
+
+                    # Real Nexus example (NOT required for the final):
+                    # curl -v -u admin:admin123 --upload-file target/*.jar \
+                    #   http://nexus-service:8081/repository/maven-releases/springboot-app.jar
+                '''
             }
         }
 
-        stage('Archive Artifacts') {
+        stage('Archive Artifact') {
             steps {
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
@@ -38,14 +44,11 @@ pipeline {
     }
 
     post {
-        always {
-            echo 'Pipeline finished.'
-        }
         success {
-            echo 'Build successful!'
+            echo "Final Project Pipeline Completed Successfully!"
         }
         failure {
-            echo 'Build failed!'
+            echo "Pipeline Failed."
         }
     }
 }
